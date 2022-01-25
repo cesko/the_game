@@ -3,11 +3,14 @@ from select import select
 
 from numpy import NaN
 
+#from enum import Enum
+
+import sys
+
 MAX_VALUE = 100
 MIN_VALUE = 1
 
 MINIMUM_NUMBER_OF_TURNS = 2
-
 
 class Deck:
     
@@ -45,6 +48,9 @@ class Deck:
         
     def len(self):
         return len(self.deck)
+    
+    def nCardsLeft(self):
+        return self.len() - self.index
     
     def isEmpty(self):
         return self.index +1 == len(self.deck)
@@ -103,6 +109,8 @@ class HumanPlayer(Player):
     
         
     def takeTurn(self, piles, deck):
+        
+        self.addCards(deck.draw(self.countMissing()))
             
         keep_playing = True
         turn_counter = 0
@@ -162,7 +170,6 @@ class HumanPlayer(Player):
             if turn_counter == 2:
                 choose_card_message = "Choose a card or press ENTER to finish turn: "
         
-        self.addCards(deck.draw(self.countMissing()))   
         return True
 
 class Pile:
@@ -229,24 +236,44 @@ class TheGame:
         self.current_player = 0
         self.turn_counter = 0
         
+        self.player_alive = []
+        
     def addPlayer(self, player):
         if self.turn_counter != 0:
             print("Cannot add player, game already started")
             return
         player.refillHand(self.deck)
         self.players.append(player)
+        self.player_alive.append(True)
         
         
-    def nextTurn(self):
+    def nextTurn(self):       
         if len(self.players) < 1:
             print ("Not enough player!")
             
-        self.turn_counter += 1        
-    
         print("~~~~~~~~~~~~~~~~~~~")
+        
+        # if not any(self.player_alive):
+        #     print ("  GAME OVER :(")
+            
+        #     cards_left = []
+        #     for p in self.players:
+        #         cards_left.extend(p.hand)
+            
+        #     cards_left.extend(self.deck.deck)
+        #     print ("Cards left: " + str(cards_left))
+        #     sys.exit("")
+            
+                
+            
+            
+        self.turn_counter += 1            
+        
+        print("There are " + str(self.deck.nCardsLeft()) + " cards left on the deck." )
         print("It's " + self.players[self.current_player].name + "'s turn")
     
-        self.players[self.current_player].takeTurn(self.piles, self.deck)
+        res = self.players[self.current_player].takeTurn(self.piles, self.deck) == False
+        self.player_alive[self.current_player] = res
         
         self.current_player += 1
         if self.current_player >= len(self.players):
