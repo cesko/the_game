@@ -1,5 +1,5 @@
 import random
-from select import select
+# from select import select
 
 from numpy import NaN
 
@@ -7,7 +7,7 @@ from numpy import NaN
 
 import sys
 
-MAX_VALUE = 100
+MAX_VALUE = 10
 MIN_VALUE = 1
 
 MINIMUM_NUMBER_OF_TURNS = 2
@@ -19,7 +19,7 @@ class Deck:
         
     def reset(self):
         """create a new shuffled deck with cards from 2 to 99 and set the draw index to zero."""
-        self.deck = list(range(MIN_VALUE+1,MAX_VALUE-1))
+        self.deck = list(range(MIN_VALUE+1,MAX_VALUE))
         random.shuffle(self.deck)
         self.index = 0
         
@@ -53,7 +53,8 @@ class Deck:
         return self.len() - self.index
     
     def isEmpty(self):
-        return self.index +1 == len(self.deck)
+        #print("index=" + str(self.index) + "  len=" + str(len(self.deck)))
+        return self.index == len(self.deck)
 
             
    
@@ -80,6 +81,8 @@ class Player:
             return False
         
     def canPlay(self, piles):
+        if len(self.hand) == 0:
+            return False
         for card in [min(self.hand), max(self.hand)]:
             for pile in piles:
                 if pile.checkAllowed(card) == True:
@@ -124,7 +127,7 @@ class HumanPlayer(Player):
             
             if turn_counter < MINIMUM_NUMBER_OF_TURNS:
                 if self.canPlay(piles) == False:
-                    print("No possible turns! :(")
+                    print("No possible turns!")
                     return False
             
             selected_card = -1
@@ -252,42 +255,62 @@ class TheGame:
             print ("Not enough player!")
             
         print("~~~~~~~~~~~~~~~~~~~")
-        
-        # if not any(self.player_alive):
-        #     print ("  GAME OVER :(")
-            
-        #     cards_left = []
-        #     for p in self.players:
-        #         cards_left.extend(p.hand)
-            
-        #     cards_left.extend(self.deck.deck)
-        #     print ("Cards left: " + str(cards_left))
-        #     sys.exit("")
-            
-                
-            
             
         self.turn_counter += 1            
         
         print("There are " + str(self.deck.nCardsLeft()) + " cards left on the deck." )
         print("It's " + self.players[self.current_player].name + "'s turn")
     
-        res = self.players[self.current_player].takeTurn(self.piles, self.deck) == False
-        self.player_alive[self.current_player] = res
+        self.players[self.current_player].takeTurn(self.piles, self.deck)
         
         self.current_player += 1
         if self.current_player >= len(self.players):
             self.current_player = 0
+            
+    def won(self):
+        for p in self.players:
+            if len(p.hand) != 0:
+                return False
+        if not self.deck.isEmpty():
+            return False
+        
+        return True
+    
+    def continues(self):
+        for p in self.players:
+            if p.canPlay(self.piles):
+                return True
+            
+        return False
+         
+            
                     
             
 def main ():
     game = TheGame()
     
+    print(game.deck.deck)
+    
     game.addPlayer(HumanPlayer("Julia"))
     game.addPlayer(HumanPlayer("Christian"))
     
-    while(True):
+    while game.continues():
         game.nextTurn()
+        
+    
+    if game.won() == True:
+        print("   YAY You won :)")
+        
+    else:
+        print ("  GAME OVER :(")
+        
+        cards_left = []
+        for p in game.players:
+            cards_left.extend(p.hand)
+        
+        cards_left.extend(game.deck.deck[game.deck.index:])
+        print ("Cards left: " + str(cards_left))
+        
         
 if __name__ == "__main__":
     main()
